@@ -1,0 +1,94 @@
+Script started on 2026-05-23 09:48:33+05:30 [<not executed on terminal>]
+
+================================================================
+  IKEv2 Load Balancer — Assignment Demo
+================================================================
+
+Date: 2026-05-23T09:48:33+05:30
+Host: localhost.localdomain
+Repo: /home/raghavendranb/ikev2
+
+
+================================================================
+  1. Build configuration
+================================================================
+
+IKE_LB_MAX_SESSIONS=65536
+IKE_LB_MAX_BACKENDS=32
+IKE_LB_SESSION_TIMEOUT=3600
+
+================================================================
+  2. Build project
+================================================================
+
+rm -f src/*.o bin/*
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -DIKE_LB_MAX_SESSIONS=65536 -DIKE_LB_MAX_BACKENDS=32 -DIKE_LB_SESSION_TIMEOUT=3600 -Iinclude -c -o src/ike_msg.o src/ike_msg.c
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -DIKE_LB_MAX_SESSIONS=65536 -DIKE_LB_MAX_BACKENDS=32 -DIKE_LB_SESSION_TIMEOUT=3600 -Iinclude -c -o src/ike_crypto.o src/ike_crypto.c
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -DIKE_LB_MAX_SESSIONS=65536 -DIKE_LB_MAX_BACKENDS=32 -DIKE_LB_SESSION_TIMEOUT=3600 -Iinclude -c -o src/ike_session.o src/ike_session.c
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -DIKE_LB_MAX_SESSIONS=65536 -DIKE_LB_MAX_BACKENDS=32 -DIKE_LB_SESSION_TIMEOUT=3600 -Iinclude -c -o src/ike_lb_session.o src/ike_lb_session.c
+src/ike_lb_session.c: In function ‘ike_lb_config_load’:
+src/ike_lb_session.c:67:13: warning: ‘strncpy’ output may be truncated copying 63 bytes from a string of length 63 [-Wstringop-truncation]
+   67 |             strncpy(b->host, val1, sizeof(b->host) - 1);
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/ike_lb_session.c:54:13: warning: ‘strncpy’ output may be truncated copying 63 bytes from a string of length 63 [-Wstringop-truncation]
+   54 |             strncpy(cfg->listen_host, key, sizeof(cfg->listen_host) - 1);
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -DIKE_LB_MAX_SESSIONS=65536 -DIKE_LB_MAX_BACKENDS=32 -DIKE_LB_SESSION_TIMEOUT=3600 -Iinclude -c -o src/ike_lb_pcap.o src/ike_lb_pcap.c
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -Iinclude -o bin/ikev2-server src/server_main.c src/ike_msg.o src/ike_crypto.o src/ike_session.o src/ike_lb_session.o src/ike_lb_pcap.o 
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -Iinclude -o bin/ikev2-client src/client_main.c src/ike_msg.o src/ike_crypto.o src/ike_session.o src/ike_lb_session.o src/ike_lb_pcap.o 
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -DIKE_LB_MAX_SESSIONS=65536 -DIKE_LB_MAX_BACKENDS=32 -DIKE_LB_SESSION_TIMEOUT=3600 -Iinclude -o bin/ike-lb src/ike_lb_main.c src/ike_msg.o src/ike_crypto.o src/ike_session.o src/ike_lb_session.o src/ike_lb_pcap.o 
+ike-lb built with MAX_SESSIONS=65536 MAX_BACKENDS=32 TIMEOUT=3600s
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -Iinclude -o bin/test_ike_msg tests/test_ike_msg.c src/ike_msg.o src/ike_crypto.o src/ike_session.o src/ike_lb_session.o src/ike_lb_pcap.o 
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -Iinclude -o bin/test_ike_lb tests/test_ike_lb.c src/ike_msg.o src/ike_crypto.o src/ike_session.o src/ike_lb_session.o src/ike_lb_pcap.o 
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -Iinclude -o bin/test_proposals tests/test_proposals.c src/ike_msg.o src/ike_crypto.o src/ike_session.o src/ike_lb_session.o src/ike_lb_pcap.o 
+
+================================================================
+  3. Unit tests
+================================================================
+
+./bin/test_ike_msg
+Ran 13 tests, 0 failed
+./bin/test_ike_lb
+Ran 7 tests, 0 failed
+./bin/test_proposals
+Ran 10 tests, 0 failed
+
+================================================================
+  4. E2E with packet capture (ike-lb --pcap)
+================================================================
+
+== Build ==
+== Start backends and load balancer (built-in PCAP) ==
+== E2E: 3 IKE_SA_INIT exchanges via load balancer ==
+Sending IKE_SA_INIT request (368 bytes) to 127.0.0.1:5000
+Initiator SPI: 1e5c12f097a45238
+Received response (368 bytes)
+Responder SPI: 3379c4bf46cda7ff
+Response has SA=1 KE=1 Nonce=1
+IKE_SA_INIT exchange completed successfully.
+  run 1: PASS
+Sending IKE_SA_INIT request (368 bytes) to 127.0.0.1:5000
+Initiator SPI: d02c6b68d69219c7
+Received response (368 bytes)
+Responder SPI: 6dd197cef0c2858d
+Response has SA=1 KE=1 Nonce=1
+IKE_SA_INIT exchange completed successfully.
+  run 2: PASS
+Sending IKE_SA_INIT request (368 bytes) to 127.0.0.1:5000
+Initiator SPI: e83de11bce9c0589
+Received response (368 bytes)
+Responder SPI: 3cd4d9c3f540c19d
+Response has SA=1 KE=1 Nonce=1
+IKE_SA_INIT exchange completed successfully.
+  run 3: PASS
+== Analyze capture ==
+--- PCAP summary: ike_e2e_20260523_094834.pcap ---
+File size: 4968 bytes
+
+  Hub VIP (ike-lb) (udp/5000)    12 packets
+  Backend 1 (udp/5001)     0 packets
+  Backend 2 (udp/5002)     6 packets
+
+--- Flow check (client -> VIP -> backend) ---
+
+Script done on 2026-05-23 09:48:37+05:30 [COMMAND_EXIT_CODE="1"]

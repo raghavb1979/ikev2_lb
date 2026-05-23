@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>IKEv2 LB Demo Recording</title>
+<style>
+body { font-family: monospace; background: #1e1e1e; color: #d4d4d4; padding: 1em; }
+pre { white-space: pre-wrap; line-height: 1.4; }
+h1 { color: #4fc3f7; font-family: sans-serif; }
+</style></head><body>
+<h1>IKEv2 Load Balancer — Session Recording</h1>
+<pre>
+================================================================
+  IKEv2 Load Balancer — Assignment Demo
+================================================================
+
+Date: 2026-05-23T09:48:33+05:30
+Host: localhost.localdomain
+Repo: /home/raghavendranb/ikev2
+
+
+================================================================
+  1. Build configuration
+================================================================
+
+IKE_LB_MAX_SESSIONS=65536
+IKE_LB_MAX_BACKENDS=32
+IKE_LB_SESSION_TIMEOUT=3600
+
+================================================================
+  2. Build project
+================================================================
+
+rm -f src/*.o bin/*
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -DIKE_LB_MAX_SESSIONS=65536 -DIKE_LB_MAX_BACKENDS=32 -DIKE_LB_SESSION_TIMEOUT=3600 -Iinclude -c -o src/ike_msg.o src/ike_msg.c
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -DIKE_LB_MAX_SESSIONS=65536 -DIKE_LB_MAX_BACKENDS=32 -DIKE_LB_SESSION_TIMEOUT=3600 -Iinclude -c -o src/ike_crypto.o src/ike_crypto.c
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -DIKE_LB_MAX_SESSIONS=65536 -DIKE_LB_MAX_BACKENDS=32 -DIKE_LB_SESSION_TIMEOUT=3600 -Iinclude -c -o src/ike_session.o src/ike_session.c
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -DIKE_LB_MAX_SESSIONS=65536 -DIKE_LB_MAX_BACKENDS=32 -DIKE_LB_SESSION_TIMEOUT=3600 -Iinclude -c -o src/ike_lb_session.o src/ike_lb_session.c
+src/ike_lb_session.c: In function ‘ike_lb_config_load’:
+src/ike_lb_session.c:67:13: warning: ‘strncpy’ output may be truncated copying 63 bytes from a string of length 63 [-Wstringop-truncation]
+   67 |             strncpy(b-&gt;host, val1, sizeof(b-&gt;host) - 1);
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/ike_lb_session.c:54:13: warning: ‘strncpy’ output may be truncated copying 63 bytes from a string of length 63 [-Wstringop-truncation]
+   54 |             strncpy(cfg-&gt;listen_host, key, sizeof(cfg-&gt;listen_host) - 1);
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -DIKE_LB_MAX_SESSIONS=65536 -DIKE_LB_MAX_BACKENDS=32 -DIKE_LB_SESSION_TIMEOUT=3600 -Iinclude -c -o src/ike_lb_pcap.o src/ike_lb_pcap.c
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -Iinclude -o bin/ikev2-server src/server_main.c src/ike_msg.o src/ike_crypto.o src/ike_session.o src/ike_lb_session.o src/ike_lb_pcap.o 
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -Iinclude -o bin/ikev2-client src/client_main.c src/ike_msg.o src/ike_crypto.o src/ike_session.o src/ike_lb_session.o src/ike_lb_pcap.o 
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -DIKE_LB_MAX_SESSIONS=65536 -DIKE_LB_MAX_BACKENDS=32 -DIKE_LB_SESSION_TIMEOUT=3600 -Iinclude -o bin/ike-lb src/ike_lb_main.c src/ike_msg.o src/ike_crypto.o src/ike_session.o src/ike_lb_session.o src/ike_lb_pcap.o 
+ike-lb built with MAX_SESSIONS=65536 MAX_BACKENDS=32 TIMEOUT=3600s
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -Iinclude -o bin/test_ike_msg tests/test_ike_msg.c src/ike_msg.o src/ike_crypto.o src/ike_session.o src/ike_lb_session.o src/ike_lb_pcap.o 
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -Iinclude -o bin/test_ike_lb tests/test_ike_lb.c src/ike_msg.o src/ike_crypto.o src/ike_session.o src/ike_lb_session.o src/ike_lb_pcap.o 
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -Iinclude -o bin/test_proposals tests/test_proposals.c src/ike_msg.o src/ike_crypto.o src/ike_session.o src/ike_lb_session.o src/ike_lb_pcap.o 
+
+================================================================
+  3. Unit tests
+================================================================
+
+./bin/test_ike_msg
+Ran 13 tests, 0 failed
+./bin/test_ike_lb
+Ran 7 tests, 0 failed
+./bin/test_proposals
+Ran 10 tests, 0 failed
+
+================================================================
+  4. E2E with packet capture (ike-lb --pcap)
+================================================================
+
+== Build ==
+== Start backends and load balancer (built-in PCAP) ==
+== E2E: 3 IKE_SA_INIT exchanges via load balancer ==
+Sending IKE_SA_INIT request (368 bytes) to 127.0.0.1:5000
+Initiator SPI: 1e5c12f097a45238
+Received response (368 bytes)
+Responder SPI: 3379c4bf46cda7ff
+Response has SA=1 KE=1 Nonce=1
+IKE_SA_INIT exchange completed successfully.
+  run 1: PASS
+Sending IKE_SA_INIT request (368 bytes) to 127.0.0.1:5000
+Initiator SPI: d02c6b68d69219c7
+Received response (368 bytes)
+Responder SPI: 6dd197cef0c2858d
+Response has SA=1 KE=1 Nonce=1
+IKE_SA_INIT exchange completed successfully.
+  run 2: PASS
+Sending IKE_SA_INIT request (368 bytes) to 127.0.0.1:5000
+Initiator SPI: e83de11bce9c0589
+Received response (368 bytes)
+Responder SPI: 3cd4d9c3f540c19d
+Response has SA=1 KE=1 Nonce=1
+IKE_SA_INIT exchange completed successfully.
+  run 3: PASS
+== Analyze capture ==
+--- PCAP summary: ike_e2e_20260523_094834.pcap ---
+File size: 4968 bytes
+
+  Hub VIP (ike-lb) (udp/5000)    12 packets
+  Backend 1 (udp/5001)     0 packets
+  Backend 2 (udp/5002)     6 packets
+
+--- Flow check (client -&gt; VIP -&gt; backend) ---
+
+================================================================
+  IKEv2 Load Balancer — Assignment Demo
+================================================================
+
+Date: 2026-05-23T09:50:16+05:30
+Host: localhost.localdomain
+Repo: /home/raghavendranb/ikev2
+
+
+================================================================
+  1. Build configuration
+================================================================
+
+make[1]: Entering directory &#x27;/home/raghavendranb/ikev2&#x27;
+IKE_LB_MAX_SESSIONS=65536
+IKE_LB_MAX_BACKENDS=32
+IKE_LB_SESSION_TIMEOUT=3600
+make[1]: Leaving directory &#x27;/home/raghavendranb/ikev2&#x27;
+
+================================================================
+  2. Build project
+================================================================
+
+make[1]: Entering directory &#x27;/home/raghavendranb/ikev2&#x27;
+rm -f src/*.o bin/*
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -DIKE_LB_MAX_SESSIONS=65536 -DIKE_LB_MAX_BACKENDS=32 -DIKE_LB_SESSION_TIMEOUT=3600 -Iinclude -c -o src/ike_msg.o src/ike_msg.c
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -DIKE_LB_MAX_SESSIONS=65536 -DIKE_LB_MAX_BACKENDS=32 -DIKE_LB_SESSION_TIMEOUT=3600 -Iinclude -c -o src/ike_crypto.o src/ike_crypto.c
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -DIKE_LB_MAX_SESSIONS=65536 -DIKE_LB_MAX_BACKENDS=32 -DIKE_LB_SESSION_TIMEOUT=3600 -Iinclude -c -o src/ike_session.o src/ike_session.c
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -DIKE_LB_MAX_SESSIONS=65536 -DIKE_LB_MAX_BACKENDS=32 -DIKE_LB_SESSION_TIMEOUT=3600 -Iinclude -c -o src/ike_lb_session.o src/ike_lb_session.c
+src/ike_lb_session.c: In function ‘ike_lb_config_load’:
+src/ike_lb_session.c:67:13: warning: ‘strncpy’ output may be truncated copying 63 bytes from a string of length 63 [-Wstringop-truncation]
+   67 |             strncpy(b-&gt;host, val1, sizeof(b-&gt;host) - 1);
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/ike_lb_session.c:54:13: warning: ‘strncpy’ output may be truncated copying 63 bytes from a string of length 63 [-Wstringop-truncation]
+   54 |             strncpy(cfg-&gt;listen_host, key, sizeof(cfg-&gt;listen_host) - 1);
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -DIKE_LB_MAX_SESSIONS=65536 -DIKE_LB_MAX_BACKENDS=32 -DIKE_LB_SESSION_TIMEOUT=3600 -Iinclude -c -o src/ike_lb_pcap.o src/ike_lb_pcap.c
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -Iinclude -o bin/ikev2-server src/server_main.c src/ike_msg.o src/ike_crypto.o src/ike_session.o src/ike_lb_session.o src/ike_lb_pcap.o 
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -Iinclude -o bin/ikev2-client src/client_main.c src/ike_msg.o src/ike_crypto.o src/ike_session.o src/ike_lb_session.o src/ike_lb_pcap.o 
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -DIKE_LB_MAX_SESSIONS=65536 -DIKE_LB_MAX_BACKENDS=32 -DIKE_LB_SESSION_TIMEOUT=3600 -Iinclude -o bin/ike-lb src/ike_lb_main.c src/ike_msg.o src/ike_crypto.o src/ike_session.o src/ike_lb_session.o src/ike_lb_pcap.o 
+ike-lb built with MAX_SESSIONS=65536 MAX_BACKENDS=32 TIMEOUT=3600s
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -Iinclude -o bin/test_ike_msg tests/test_ike_msg.c src/ike_msg.o src/ike_crypto.o src/ike_session.o src/ike_lb_session.o src/ike_lb_pcap.o 
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -Iinclude -o bin/test_ike_lb tests/test_ike_lb.c src/ike_msg.o src/ike_crypto.o src/ike_session.o src/ike_lb_session.o src/ike_lb_pcap.o 
+cc -Wall -Wextra -Wpedantic -std=c11 -O2 -g -DIKEV2_NO_SSL -Iinclude -o bin/test_proposals tests/test_proposals.c src/ike_msg.o src/ike_crypto.o src/ike_session.o src/ike_lb_session.o src/ike_lb_pcap.o 
+make[1]: Leaving directory &#x27;/home/raghavendranb/ikev2&#x27;
+
+================================================================
+  3. Unit tests
+================================================================
+
+make[1]: Entering directory &#x27;/home/raghavendranb/ikev2&#x27;
+./bin/test_ike_msg
+Ran 13 tests, 0 failed
+./bin/test_ike_lb
+Ran 7 tests, 0 failed
+./bin/test_proposals
+Ran 10 tests, 0 failed
+make[1]: Leaving directory &#x27;/home/raghavendranb/ikev2&#x27;
+
+================================================================
+  4. E2E with packet capture (ike-lb --pcap)
+================================================================
+
+== Build ==
+== Start backends and load balancer (built-in PCAP) ==
+== E2E: 3 IKE_SA_INIT exchanges via load balancer ==
+Sending IKE_SA_INIT request (368 bytes) to 127.0.0.1:5000
+Initiator SPI: 51bb6bec19393892
+Received response (368 bytes)
+Responder SPI: 45de582d19f74240
+Response has SA=1 KE=1 Nonce=1
+IKE_SA_INIT exchange completed successfully.
+  run 1: PASS
+Sending IKE_SA_INIT request (368 bytes) to 127.0.0.1:5000
+Initiator SPI: 0216967fa99e9028
+Received response (368 bytes)
+Responder SPI: 70265658ee06c450
+Response has SA=1 KE=1 Nonce=1
+IKE_SA_INIT exchange completed successfully.
+  run 2: PASS
+Sending IKE_SA_INIT request (368 bytes) to 127.0.0.1:5000
+Initiator SPI: 374685dd87d9a554
+Received response (368 bytes)
+Responder SPI: 814f73c146dd57a9
+Response has SA=1 KE=1 Nonce=1
+IKE_SA_INIT exchange completed successfully.
+  run 3: PASS
+== Analyze capture ==
+--- PCAP summary: ike_e2e_20260523_095016.pcap ---
+File size: 4968 bytes
+
+  Hub VIP (ike-lb) (udp/5000)    12 packets
+  Backend 1 (udp/5001)     4 packets
+  Backend 2 (udp/5002)     2 packets
+
+--- Flow check (client -&gt; VIP -&gt; backend) ---
+NOTE: E2E/pcap step exited non-zero (see log); continuing demo.
+
+================================================================
+  5. Multi-session load balance
+================================================================
+
+== 5 IKE_SA_INIT sessions via LB (sequential) ==
+Clients succeeded: 5/5
+      1 new IKE session -&gt; backend 0 (127.0.0.1:5001)
+      4 new IKE session -&gt; backend 1 (127.0.0.1:5002)
+Backend 0 sessions: 1
+Backend 1 sessions: 4
+Multi-session E2E: PASS
+
+================================================================
+  6. Artifacts
+================================================================
+
+total 52
+drwxr-xr-x. 3 raghavendranb raghavendranb   146 May 23 09:48 .
+drwxr-xr-x. 3 raghavendranb raghavendranb  4096 May 23 09:48 ..
+-rw-r--r--. 1 raghavendranb raghavendranb 11286 May 23 09:50 demo_recording.log
+-rw-r--r--. 1 raghavendranb raghavendranb  5395 May 23 09:48 demo_session.script
+-rw-r--r--. 1 raghavendranb raghavendranb  4743 May 23 09:44 IKEv2_LoadBalancer_Report.pdf
+-rw-r--r--. 1 raghavendranb raghavendranb 19655 May 23 09:44 IKEv2_LoadBalancer_Report.pptx
+drwxr-xr-x. 2 raghavendranb raghavendranb   167 May 23 09:50 pcap
+total 36
+drwxr-xr-x. 2 raghavendranb raghavendranb  167 May 23 09:50 .
+drwxr-xr-x. 3 raghavendranb raghavendranb  146 May 23 09:48 ..
+-rw-r--r--. 1 raghavendranb raghavendranb 4968 May 23 09:25 ike_e2e_20260523_092511.pcap
+-rw-r--r--. 1 raghavendranb raghavendranb 4968 May 23 09:25 ike_e2e_20260523_092544.pcap
+-rw-r--r--. 1 raghavendranb raghavendranb 4968 May 23 09:48 ike_e2e_20260523_094834.pcap
+-rw-r--r--. 1 raghavendranb raghavendranb 4968 May 23 09:50 ike_e2e_20260523_095016.pcap
+-rw-r--r--. 1 raghavendranb raghavendranb  469 May 23 09:20 README.md
+
+Documentation:
+/home/raghavendranb/ikev2/docs/DESIGN.md
+/home/raghavendranb/ikev2/docs/INTEROP_ALGORITHM_STATUS.md
+/home/raghavendranb/ikev2/docs/INTEROP.md
+/home/raghavendranb/ikev2/docs/PROMPTS.md
+/home/raghavendranb/ikev2/docs/README.md
+/home/raghavendranb/ikev2/docs/RECORDING.md
+/home/raghavendranb/ikev2/docs/SUBMISSION_REPORT.md
+/home/raghavendranb/ikev2/docs/TEST_PLAN.md
+
+================================================================
+  Demo complete
+================================================================
+
+Log file: /home/raghavendranb/ikev2/docs/output/demo_recording.log
+PCAP:     /home/raghavendranb/ikev2/docs/output/pcap/ike_e2e_*.pcap
+PDF:      /home/raghavendranb/ikev2/docs/output/IKEv2_LoadBalancer_Report.pdf
+</pre>
+</body></html>

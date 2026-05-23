@@ -1,0 +1,8 @@
+# IKEv2 load balancer — place as config/ike-lb.conf
+listen 0.0.0.0 5000
+natt_port 4500
+
+# openiked backends (real hub IPs)
+backend 10.0.0.11 500
+backend 10.0.0.12 500
+backend 10.0.0.13 500
