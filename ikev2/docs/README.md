@@ -23,10 +23,17 @@
 make submission-docs
 ```
 
+Refresh interop log, debug bundle, and PDF/PPTX in one step (requires root):
+
+```bash
+sudo ./scripts/refresh_submission_artifacts.sh
+```
+
 ## Run all tests
 
 ```bash
 make test-all
-make test-e2e-pcap
 make test-e2e-multi
+sudo make test-interop-real    # S-01 StrongSwan (see INTEROP_ALGORITHM_STATUS.md)
+make test-e2e-pcap             # verify PCAP on your host
 ```

@@ -21,7 +21,9 @@
 struct ike_lb_backend {
     char host[64];
     uint16_t port;
+    uint16_t natt_port;
     struct sockaddr_storage addr;
+    struct sockaddr_storage natt_addr;
     socklen_t addr_len;
     int enabled;
 };
@@ -55,6 +57,16 @@ int ike_lb_pick_backend(const struct ike_lb_config *cfg, const ike_spi_t init_sp
 int ike_lb_session_lookup(struct ike_lb_session *table, size_t capacity,
                           const struct sockaddr_storage *client, socklen_t client_len,
                           const ike_spi_t init_spi, const ike_spi_t resp_spi);
+int ike_lb_session_lookup_natt(struct ike_lb_session *table, size_t capacity,
+                               const struct sockaddr_storage *client, socklen_t client_len,
+                               const ike_spi_t init_spi, const ike_spi_t resp_spi);
+int ike_lb_session_lookup_single_backend(struct ike_lb_session *table, size_t capacity,
+                                         int backend_index);
+int ike_lb_session_lookup_client(struct ike_lb_session *table, size_t capacity,
+                                 const struct sockaddr_storage *client, socklen_t client_len);
+void ike_lb_session_update_client(struct ike_lb_session *table, size_t capacity,
+                                  int index, const struct sockaddr_storage *client,
+                                  socklen_t client_len, int client_listen_fd);
 int ike_lb_session_bind(struct ike_lb_session *table, size_t capacity,
                         const struct sockaddr_storage *client, socklen_t client_len,
                         const ike_spi_t init_spi, int backend_index,

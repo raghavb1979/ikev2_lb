@@ -39,7 +39,7 @@ Related: [FLOWS.md](FLOWS.md) (diagrams), [TEST_PLAN.md](TEST_PLAN.md) (test IDs
 | **Same proposals** on every backend | Any backend must accept spoke offer | U-06, S-03, INTEROP |
 | **Certs / PSK / IDs** aligned | IKE_AUTH fails if mismatched | S-01 (manual), INTEROP |
 | **DH/ECP alignment** (ecp256 vs group14) | KE negotiation failure | INTEROP; align before S-01 |
-| Full **IKE_SA_INIT → AUTH → CHILD** on same backend | LB stickiness end-to-end | I-02/I-04 partial; S-01/S-02 manual |
+| Full **IKE_SA_INIT → AUTH → CHILD** on same backend | LB stickiness end-to-end | **S-01 automated PASS**; S-02 manual |
 | **Rekey** on existing IKE SA | Must hit same backend | Flow in FLOWS §4; manual after S-01 |
 | **DPD / liveness** | Detect dead peer / backend | Recommended in INTEROP; not automated |
 
@@ -84,7 +84,7 @@ Related: [FLOWS.md](FLOWS.md) (diagrams), [TEST_PLAN.md](TEST_PLAN.md) (test IDs
 | **I-04** | E2E + PCAP | Evidence of forward/return on the wire |
 | **I-05** | 5 sessions, 2 backends | Multiple spokes ≠ all on same `iked` |
 | **P-01–P-03** | PCAP capture/analysis | Production debug on hub (`tcpdump eth0`) |
-| **S-01** | StrongSwan → VIP → openiked | **Real interop** — required before go-live |
+| **S-01** | StrongSwan → VIP → hub `charon` / `iked` | **Automated PASS** on lab (`run_interop_real.sh`) |
 | **S-02** | Repeat init, same backend stickiness | Many spokes re-connecting |
 | **S-03** | One bad `iked.conf` | Proves config management is mandatory |
 | **S-04** | NAT-T spoke | Retail / branch behind NAT |

@@ -29,7 +29,7 @@ else
 LDFLAGS ?= -lssl -lcrypto
 endif
 
-.PHONY: all clean test test-all test-e2e-pcap test-e2e-multi run-server run-client run-lb dirs show-config submission-docs record
+.PHONY: all clean test test-all test-e2e-pcap test-e2e-multi test-interop-real run-server run-client run-lb dirs show-config submission-docs record
 
 all: dirs $(SERVER) $(CLIENT) $(IKE_LB) $(TEST_BIN) $(TEST_LB) $(TEST_PROP)
 
@@ -90,6 +90,12 @@ test-e2e-pcap:
 test-e2e-multi:
 	@chmod +x scripts/run_multi_session_e2e.sh
 	./scripts/run_multi_session_e2e.sh
+
+test-interop-real:
+	@chmod +x scripts/run_interop_real.sh
+	@echo "Requires: sudo, strongswan (swanctl). Optional: openiked (iked)."
+	@echo "Log: docs/output/interop_real.log"
+	sudo ./scripts/run_interop_real.sh
 
 run-server: $(SERVER)
 	./$(SERVER)

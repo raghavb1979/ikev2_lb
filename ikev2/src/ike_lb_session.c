@@ -58,19 +58,26 @@ int ike_lb_config_load(struct ike_lb_config *cfg, const char *path)
             continue;
         if (strncmp(line, "backend", 7) == 0) {
             struct ike_lb_backend *b;
-            unsigned bport = 500;
+            unsigned bport = 500, bnatt = 4500;
+            int has_natt = 0;
             if (cfg->num_backends >= IKE_LB_MAX_BACKENDS)
                 continue;
-            if (sscanf(line, " backend %63s %u", val1, &bport) < 1)
+            if (sscanf(line, " backend %63s %u natt %u", val1, &bport, &bnatt) >= 2)
+                has_natt = (strstr(line, " natt ") != NULL);
+            else if (sscanf(line, " backend %63s %u", val1, &bport) < 1)
                 continue;
             b = &cfg->backends[cfg->num_backends++];
             strncpy(b->host, val1, sizeof(b->host) - 1);
             b->port = (uint16_t)bport;
+            b->natt_port = has_natt ? (uint16_t)bnatt : b->port;
             b->addr_len = sizeof(b->addr);
             if (inet_pton(AF_INET, b->host, &((struct sockaddr_in *)&b->addr)->sin_addr) == 1) {
                 struct sockaddr_in *sin = (struct sockaddr_in *)&b->addr;
+                struct sockaddr_in *snatt = (struct sockaddr_in *)&b->natt_addr;
                 sin->sin_family = AF_INET;
                 sin->sin_port = htons(b->port);
+                memcpy(&b->natt_addr, &b->addr, sizeof(b->addr));
+                snatt->sin_port = htons(b->natt_port);
                 b->enabled = 1;
             }
         }
@@ -120,6 +127,32 @@ static int addr_match(const struct sockaddr_storage *a, socklen_t alen,
     return memcmp(a, b, alen) == 0;
 }
 
+static int addr_ip_match(const struct sockaddr_storage *a, socklen_t alen,
+                         const struct sockaddr_storage *b, socklen_t blen)
+{
+    const struct sockaddr_in *sa;
+    const struct sockaddr_in *sb;
+
+    if (alen < sizeof(struct sockaddr_in) || blen < sizeof(struct sockaddr_in))
+        return 0;
+    if (a->ss_family != AF_INET || b->ss_family != AF_INET)
+        return 0;
+    sa = (const struct sockaddr_in *)a;
+    sb = (const struct sockaddr_in *)b;
+    return sa->sin_addr.s_addr == sb->sin_addr.s_addr;
+}
+
+static int session_spi_match(const struct ike_lb_session *row,
+                             const ike_spi_t init_spi, const ike_spi_t resp_spi)
+{
+    if (memcmp(row->initiator_spi, init_spi, IKE_SPI_LEN) != 0)
+        return 0;
+    if (!spi_is_zero(resp_spi) && !spi_is_zero(row->responder_spi) &&
+        memcmp(row->responder_spi, resp_spi, IKE_SPI_LEN) != 0)
+        return 0;
+    return 1;
+}
+
 int ike_lb_session_lookup(struct ike_lb_session *table, size_t capacity,
                           const struct sockaddr_storage *client, socklen_t client_len,
                           const ike_spi_t init_spi, const ike_spi_t resp_spi)
@@ -141,14 +174,91 @@ int ike_lb_session_lookup(struct ike_lb_session *table, size_t capacity,
         }
         if (!addr_match(&table[i].client_addr, table[i].client_len, client, client_len))
             continue;
-        if (memcmp(table[i].initiator_spi, init_spi, IKE_SPI_LEN) != 0)
-            continue;
-        if (!spi_is_zero(resp_spi) &&
-            memcmp(table[i].responder_spi, resp_spi, IKE_SPI_LEN) != 0)
+        if (!session_spi_match(&table[i], init_spi, resp_spi))
             continue;
         return (int)i;
     }
     return -1;
+}
+
+int ike_lb_session_lookup_natt(struct ike_lb_session *table, size_t capacity,
+                               const struct sockaddr_storage *client, socklen_t client_len,
+                               const ike_spi_t init_spi, const ike_spi_t resp_spi)
+{
+    time_t now = time(NULL);
+
+    if (spi_is_zero(resp_spi))
+        return -1;
+
+    for (size_t i = 0; i < capacity; i++) {
+        if (!table[i].in_use)
+            continue;
+        if (now - table[i].last_seen > IKE_LB_SESSION_TIMEOUT) {
+            table[i].in_use = 0;
+            continue;
+        }
+        if (!addr_ip_match(&table[i].client_addr, table[i].client_len, client, client_len))
+            continue;
+        if (!session_spi_match(&table[i], init_spi, resp_spi))
+            continue;
+        return (int)i;
+    }
+    return -1;
+}
+
+void ike_lb_session_update_client(struct ike_lb_session *table, size_t capacity,
+                                  int index, const struct sockaddr_storage *client,
+                                  socklen_t client_len, int client_listen_fd)
+{
+    if (index < 0 || (size_t)index >= capacity || !table[index].in_use)
+        return;
+    memcpy(&table[index].client_addr, client, client_len);
+    table[index].client_len = client_len;
+    if (client_listen_fd >= 0)
+        table[index].client_listen_fd = client_listen_fd;
+    table[index].last_seen = time(NULL);
+}
+
+int ike_lb_session_lookup_client(struct ike_lb_session *table, size_t capacity,
+                                 const struct sockaddr_storage *client, socklen_t client_len)
+{
+    time_t now = time(NULL);
+    int best = -1;
+
+    for (size_t i = 0; i < capacity; i++) {
+        if (!table[i].in_use)
+            continue;
+        if (now - table[i].last_seen > IKE_LB_SESSION_TIMEOUT) {
+            table[i].in_use = 0;
+            continue;
+        }
+        if (!addr_match(&table[i].client_addr, table[i].client_len, client, client_len) &&
+            !addr_ip_match(&table[i].client_addr, table[i].client_len, client, client_len))
+            continue;
+        if (best < 0 || table[i].last_seen >= table[best].last_seen)
+            best = (int)i;
+    }
+    return best;
+}
+
+int ike_lb_session_lookup_single_backend(struct ike_lb_session *table, size_t capacity,
+                                         int backend_index)
+{
+    time_t now = time(NULL);
+    int only = -1;
+    int count = 0;
+
+    for (size_t i = 0; i < capacity; i++) {
+        if (!table[i].in_use || table[i].backend_index != backend_index)
+            continue;
+        if (now - table[i].last_seen > IKE_LB_SESSION_TIMEOUT) {
+            table[i].in_use = 0;
+            continue;
+        }
+        count++;
+        only = (int)i;
+    }
+    return (count == 1) ? only : -1;
 }
 
 int ike_lb_session_lookup_spi(struct ike_lb_session *table, size_t capacity,
@@ -168,7 +278,8 @@ int ike_lb_session_lookup_spi(struct ike_lb_session *table, size_t capacity,
             continue;
         if (memcmp(table[i].initiator_spi, init_spi, IKE_SPI_LEN) != 0)
             continue;
-        if (!spi_is_zero(resp_spi) &&
+        /* Responder SPI learned from first backend IKE_SA_INIT response. */
+        if (!spi_is_zero(resp_spi) && !spi_is_zero(table[i].responder_spi) &&
             memcmp(table[i].responder_spi, resp_spi, IKE_SPI_LEN) != 0)
             continue;
         return (int)i;

@@ -73,18 +73,21 @@ Deliverables:
 | Level | Result |
 |-------|--------|
 | Unit `test_ike_msg` | 13/13 PASS |
-| Unit `test_ike_lb` | 7/7 PASS |
+| Unit `test_ike_lb` | 8/8 PASS |
 | Unit `test_proposals` | 10/10 PASS |
 | E2E `scripts/run_tests.sh` | IKE_SA_INIT via LB PASS |
-| E2E `scripts/run_e2e_tcpdump.sh` | PASS (built-in `--pcap`) |
 | E2E `scripts/run_multi_session_e2e.sh` | 5/5 PASS |
+| E2E `scripts/run_interop_real.sh` (S-01) | **PASS** — StrongSwan spoke → VIP → hub `charon`; CHILD SA ESTABLISHED |
+| E2E `scripts/run_e2e_tcpdump.sh` | Run on lab host (PCAP flow check) |
 
 See: `docs/TEST_PLAN.md`
 
 ### 3.5 StrongSwan interop
 
+- Automated script: `sudo ./scripts/run_interop_real.sh` (log: `docs/output/interop_real.log`)
+- Default `INTEROP_NO_NAT=1` uses `203.0.113.1/2` for reliable S-01; `10.10.x` + NAT-T (`INTEROP_NO_NAT=0`) documented as follow-up
 - Config alignment: `docs/INTEROP.md`
-- **Required vs Recommended vs Optional** scenarios and go-live checklists: [INTEROP.md#required-vs-optional-scenarios](INTEROP.md#required-vs-optional-scenarios)
+- **Required vs Recommended vs Optional** scenarios: [INTEROP.md#required-vs-optional-scenarios](INTEROP.md#required-vs-optional-scenarios)
 - Algorithm / test status: `docs/INTEROP_ALGORITHM_STATUS.md`
 
 ---

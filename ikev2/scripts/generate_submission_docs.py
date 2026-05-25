@@ -175,9 +175,9 @@ def build_pdf():
     pdf.text("4. Build & Test Results", bold=True)
     pdf.text("  make IKEV2_NO_SSL=1 && make show-config")
     pdf.text("  MAX_SESSIONS=65536  MAX_BACKENDS=32  TIMEOUT=3600s")
-    pdf.text("  Unit tests: 30/30 PASS (msg, lb, proposals)")
-    pdf.text("  E2E + PCAP: run_e2e_tcpdump.sh PASS")
-    pdf.text("  Multi-session: 5/5 via LB")
+    pdf.text("  Unit tests: 31/31 PASS (msg, lb, proposals)")
+    pdf.text("  E2E demo: run_tests.sh + multi-session 5/5 PASS")
+    pdf.text("  Real interop S-01: run_interop_real.sh PASS (StrongSwan/charon)")
     pdf.add_page()
 
     pdf.text("5. Scalability", bold=True)
@@ -206,8 +206,9 @@ def build_pdf():
         "identical iked configs, StrongSwan to VIP only, firewall 500/4500+ESP."
     )
     pdf.text("  Lab: symmetric LB relay. Prod: often direct backend IKE replies.")
-    pdf.text("  Manual: S-01 StrongSwan, S-02 stickiness, S-03 config parity, S-04 NAT-T")
-    pdf.text("  Gaps: IKE_AUTH/ESP not in CI — see docs/PRACTICALITY.md")
+    pdf.text("  Automated S-01: IKE_AUTH + CHILD via hub VIP (default 203.0.113.x)")
+    pdf.text("  Manual: S-02 stickiness, S-03 config parity; S-04 NAT-T (10.10.x) open")
+    pdf.text("  See docs/INTEROP_ALGORITHM_STATUS.md, INTEROP_NO_NAT")
     pdf.add_page()
 
     pdf.text("8. Session recording", bold=True)
@@ -294,10 +295,10 @@ def build_pptx():
         ]),
         ("Implementation Steps", [f"{t}: {d}" for t, d in STEPS]),
         ("Test Results", [
-            "Unit tests: 30/30 PASS",
+            "Unit tests: 31/31 PASS",
             "E2E + PCAP: run_e2e_tcpdump.sh",
             "Multi-session: 5/5 via LB",
-            "Manual: StrongSwan + openiked S-01–S-04",
+            "S-01 automated PASS (StrongSwan); S-02–S-04 partial/manual",
         ]),
         ("Scalability", [
             "Horizontal: add iked backends; VIP unchanged",
@@ -316,7 +317,7 @@ def build_pptx():
             "Lab: IKE_SA_INIT + stickiness via demo client/LB",
             "Prod: StrongSwan + openiked; IKE_AUTH, ESP, certs",
             "Lab relay vs prod asymmetric IKE return",
-            "Manual S-01–S-04 before go-live",
+            "S-04 NAT-T (10.10.x) before full go-live",
             "docs/PRACTICALITY.md + TEST_PLAN section 2",
         ]),
         ("Recording", [

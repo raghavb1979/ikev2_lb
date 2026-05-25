@@ -4,18 +4,27 @@ Required vs optional scenario list: **[INTEROP.md](INTEROP.md#required-vs-option
 
 ## Summary
 
-| Layer | Automated (lab) | Manual (StrongSwan + openiked) |
-|-------|-----------------|--------------------------------|
-| IKE_SA_INIT UDP flow via `ike-lb` | **PASS** | Not run |
-| SPI stickiness / multi-backend | **PASS** | Not run |
-| SA payload present (demo stub) | **PASS** | Not run |
-| **Algorithm negotiation with real peer** | **NOT TESTED** | Required |
-| IKE_AUTH + certificates/PSK | **NOT TESTED** | Required |
-| CHILD_SA / ESP (aes256gcm16-ecp256) | **NOT TESTED** | Required |
-| NAT-T UDP 4500 | **NOT TESTED** | Required (S-04) |
-| Mismatched proposal on one backend | **NOT TESTED** | Required (S-03) |
+| Layer | Automated (lab) | Real peers (StrongSwan + charon hub) |
+|-------|-----------------|--------------------------------------|
+| IKE_SA_INIT UDP flow via `ike-lb` | **PASS** | **PASS** (`run_interop_real.sh` S-01) |
+| SPI stickiness / multi-backend | **PASS** (demo) | S-02: partial log hint; full test manual |
+| SA payload present (demo stub) | **PASS** | — |
+| **Algorithm negotiation with real peer** | Demo stub only | **PASS** (PSK, aes256gcm16-prfsha256-ecp256) |
+| IKE_AUTH + PSK | Demo stub only | **PASS** (S-01, hub + spoke `charon`) |
+| CHILD_SA (kernel install) | Demo stub only | **PASS** (S-01 `swanctl --list-sas` ESTABLISHED) |
+| ESP + ping across tunnel | No | Manual (not in interop script) |
+| NAT-T UDP 4500 (`10.10.x`) | Demo only | **SKIP** by default; see `INTEROP_NO_NAT` below |
+| Mismatched proposal on one backend | **NOT TESTED** | S-03 manual |
 
-**Conclusion:** Load-balancer **message flow** is tested; full **StrongSwan ↔ OpenIKED algorithm interop** is documented but **not executed** in this environment (no `iked` / `charon` installed in CI).
+**Conclusion:** Load-balancer **relay + stickiness** and **StrongSwan hub–spoke IKE through VIP** are validated on a lab host with `sudo ./scripts/run_interop_real.sh` (default **S-01 PASS**). OpenIKED (`iked`) multi-backend mode is optional (`INTEROP_MODE=openiked`). Production **NAT-T on RFC1918** (`10.10.x`) still needs client-IP preservation on the backend leg (`INTEROP_NO_NAT=0` path).
+
+### Default interop networking (`INTEROP_NO_NAT=1`)
+
+The automated script defaults to **RFC5737 TEST-NET-3** (`203.0.113.1` hub, `203.0.113.2` spoke) so StrongSwan does not force NAT-T while the hub `charon` sees the client via `127.0.0.1` relay sockets. For the original **`10.10.x` + VIP :4500** design, run:
+
+```bash
+sudo INTEROP_NO_NAT=0 ./scripts/run_interop_real.sh   # S-04 attempted; may fail until relay preserves spoke IP
+```
 
 ---
 

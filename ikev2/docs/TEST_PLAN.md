@@ -88,16 +88,18 @@ See **[INTEROP.md — Required vs optional scenarios](INTEROP.md#required-vs-opt
 
 | Flow | Automated | Notes |
 |------|-----------|-------|
-| IKE_SA_INIT via LB | PASS | Demo client/server |
-| IKE_AUTH | No | Needs real `iked` + StrongSwan |
-| CHILD_SA / ESP | No | Not in demo stack |
-| aes256gcm16-prfsha256-ecp256 | Documented only | Demo uses DH **14**, interop doc uses **ecp256** — align before live test |
+| IKE_SA_INIT via LB | PASS | Demo client/server + StrongSwan S-01 |
+| IKE_AUTH + PSK | PASS | `sudo ./scripts/run_interop_real.sh` (S-01) |
+| CHILD_SA install | PASS | S-01 checks ESTABLISHED on spoke |
+| ESP + ping | No | Manual after tunnel up |
+| aes256gcm16-prfsha256-ecp256 | PASS (interop) | Demo stub still uses DH **14**; interop uses **ecp256** |
+| NAT-T `10.10.x` | SKIP (default) | `INTEROP_NO_NAT=1`; set `INTEROP_NO_NAT=0` for S-04 |
 
 ### 4.5 System / interop tests (manual)
 
 | ID | Test | Steps | Pass criteria |
 |----|------|-------|---------------|
-| S-01 | StrongSwan → VIP | Spoke `swanctl --initiate` to hub VIP | IKE_SA_INIT completes |
+| S-01 | StrongSwan → VIP | Spoke `swanctl --initiate` to hub VIP | IKE + CHILD SA **ESTABLISHED** on spoke (automated) |
 | S-02 | Sticky backend | Repeat 10 initiations; check `ikectl sa` on hubs | Same SPI pair on one iked |
 | S-03 | openiked config parity | Mismatched proposal on one backend | Should fail (proves need for sync) |
 | S-04 | NAT-T | Spoke behind NAT, UDP 4500 | IKE completes with encapsulation |
@@ -138,6 +140,11 @@ make test-e2e-pcap
 
 # 5 parallel sessions (backend distribution)
 make test-e2e-multi
+
+# Real StrongSwan spoke → ike-lb VIP → hub charon (needs root, swanctl)
+sudo make test-interop-real
+# Log: docs/output/interop_real.log
+# Default: INTEROP_NO_NAT=1 (203.0.113.x). For 10.10.x NAT-T: INTEROP_NO_NAT=0
 ```
 
 Or step by step:
@@ -153,9 +160,11 @@ make IKEV2_NO_SSL=1 test
 
 | Area | Status |
 |------|--------|
-| Unit (U-01–U-07) | Automated |
-| Integration (I-01–I-05) | `run_tests.sh`, `test-e2e-*` |
-| StrongSwan (S-01–S-04) | Manual with INTEROP.md configs |
+| Unit (U-01–U-07) | Automated PASS (31 tests) |
+| Integration (I-01–I-05) | `run_tests.sh`, `test-e2e-multi` PASS; `test-e2e-pcap` verify on host |
+| StrongSwan S-01 | **Automated PASS** — `sudo make test-interop-real` or `run_interop_real.sh` |
+| S-02, S-03 | Manual |
+| S-04 NAT-T | Manual / `INTEROP_NO_NAT=0` (not default PASS) |
 
 ## 8. Failure analysis
 

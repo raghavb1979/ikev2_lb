@@ -64,6 +64,25 @@ sudo ./scripts/run_e2e_tcpdump.sh   # capture on lo → docs/output/pcap/
 
 See [docs/TEST_PLAN.md](docs/TEST_PLAN.md) (tests I-04, I-05, P-01–P-03).
 
+## Real StrongSwan interop (S-01)
+
+Requires **root**, **swanctl** / **charon**, and network namespaces:
+
+```bash
+sudo make test-interop-real
+# or: sudo INTEROP_KEEP=1 IKE_LB_DEBUG=1 ./scripts/run_interop_real.sh
+# Log: docs/output/interop_real.log
+```
+
+| Variable | Default | Meaning |
+|----------|---------|---------|
+| `INTEROP_NO_NAT` | `1` | Use `203.0.113.x` (avoids NAT-T + `127.0.0.1` relay issue) |
+| `INTEROP_NO_NAT` | `0` | Use `10.10.x` and run S-04 NAT-T test (may fail until backend sees real spoke IP) |
+| `LB_VIP_PORT` | `5500` | Hub IKE VIP (spoke `remote_port`) |
+| `INTEROP_KEEP` | `0` | Set `1` to keep `/tmp/ikev2-interop.*` on failure |
+
+Status: [docs/INTEROP_ALGORITHM_STATUS.md](docs/INTEROP_ALGORITHM_STATUS.md)
+
 ## Lab without openiked
 
 Use demo backends:

@@ -67,6 +67,18 @@ static void test_session_bind_lookup(void)
            "lookup c2 by client+spi");
     ASSERT(ike_lb_session_lookup_spi(table, 16, 0, spi1, zero) >= 0,
            "lookup_spi backend 0");
+
+    /* NAT-T: same IP + SPI, UDP port changes 500 -> 4500 */
+    {
+        struct sockaddr_storage c1_natt;
+        socklen_t l1_natt;
+        ike_spi_t resp = {0};
+        resp[7] = 0x42;
+        ike_lb_session_set_responder_spi(table, 16, 0, resp);
+        sockaddr_in4(&c1_natt, &l1_natt, "10.1.0.5", 500);
+        ASSERT(ike_lb_session_lookup_natt(table, 16, &c1_natt, l1_natt, spi1, resp) == 0,
+               "NAT-T port change keeps same session");
+    }
 }
 
 static void test_config_load(void)

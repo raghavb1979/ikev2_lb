@@ -54,10 +54,10 @@ Use this table for design reviews and submission scope. **IKE interop** (structu
 
 | Scenario | Lab (`ikev2-*` demo) | Production validation |
 |----------|----------------------|------------------------|
-| IKE structure + SA_INIT via LB | Automated PASS | — |
-| Full algorithm negotiation | Stub only | Manual S-01 + `swanctl` / `ikectl` |
-| IKE_AUTH + ESP traffic | Not in demo | Manual S-01, ping across tunnel |
-| NAT-T | Not in demo | Manual S-04 |
+| IKE structure + SA_INIT via LB | Automated PASS | S-01 PASS |
+| IKE_AUTH + CHILD_SA (PSK, ecp256) | Not in demo | **S-01 automated PASS** (`run_interop_real.sh`) |
+| ESP + ping | Not in demo | Manual |
+| NAT-T (`10.10.x`, encap) | Not in demo | S-04 — use `INTEROP_NO_NAT=0`; open item |
 | Backend proposal mismatch | Not in demo | Manual S-03 |
 
 Algorithm test status detail: [INTEROP_ALGORITHM_STATUS.md](INTEROP_ALGORITHM_STATUS.md).

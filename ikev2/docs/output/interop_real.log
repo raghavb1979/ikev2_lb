@@ -1,0 +1,25 @@
+[06:56:58] IKEv2 real interop automation — log: /home/raghavendranb/ikev2/docs/output/interop_real.log
+[06:56:58] Building ike-lb...
+[06:56:58] Interop mode: strongswan
+[06:56:58] Workdir: /tmp/ikev2-interop.o8y9gg
+[06:56:58] Hub 203.0.113.1 (spoke dials this) — ike-lb listens 0.0.0.0:5500
+[06:56:58] === S-01: IKE_AUTH + CHILD_SA (StrongSwan spoke -> VIP -> backends) ===
+[06:56:58] Using ike-lb: /home/raghavendranb/ikev2/bin/ike-lb (rebuild with: make IKEV2_NO_SSL=1 all)
+[06:56:59] ike-lb: UDP :5500 listening in ikev2-hub
+[06:56:59] ike-lb NAT-T: UDP :4500 listening in ikev2-hub
+[06:57:00] charon (ikev2-hub): UDP :500 listening in ikev2-hub
+[06:57:00] charon NAT-T (ikev2-hub): UDP :4501 listening in ikev2-hub
+[06:57:00] NAT-T path: spoke -> VIP:4500 (ike-lb) -> 127.0.0.1:4501 (charon)
+[06:57:00] StrongSwan mode: single hub charon on :500 (use openiked mode for 2-backend S-02)
+[06:57:01] charon (ikev2-spoke): UDP :500 listening in ikev2-spoke
+[06:57:01] charon NAT-T (ikev2-spoke): UDP :4500 listening in ikev2-spoke
+[06:57:01] Spoke config loaded; initiating child 'net' to 203.0.113.1:5500 (timeout 60s) ...
+[06:57:03] S-01 PASS: IKE/IPsec SA ESTABLISHED on spoke
+[06:57:03] === S-02: stickiness (check ike-lb log for same backend across re-init) ===
+[06:57:03] S-02 partial: LB logged session binding (verify same backend_index on repeated SPI in log)
+[06:57:03] Full S-02: run multiple initiations and ikectl sa on correct iked — see TEST_PLAN.md
+[06:57:03] S-04 SKIP: INTEROP_NO_NAT=1 (TEST-NET-3 S-01 path; run INTEROP_NO_NAT=0 for NAT-T test)
+[06:57:03] === Done. S-03 (config mismatch) remains manual: break one backend proposal and expect failure ===
+[06:57:03] Artifacts: /tmp/ikev2-interop.o8y9gg
+[06:57:03] Cleaning up...
+[06:57:03] INTEROP_KEEP=1 — left workdir: /tmp/ikev2-interop.o8y9gg
